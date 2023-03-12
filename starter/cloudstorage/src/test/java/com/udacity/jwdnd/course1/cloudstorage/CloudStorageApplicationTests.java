@@ -3,7 +3,6 @@ package com.udacity.jwdnd.course1.cloudstorage;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.*;
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
@@ -111,12 +110,34 @@ class CloudStorageApplicationTests {
 		loginPassword.click();
 		loginPassword.sendKeys(password);
 
-		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id("login-button")));
-		WebElement loginButton = driver.findElement(By.id("login-button"));
-		loginButton.click();
+		clickElement(webDriverWait, "login-button");
 
 		webDriverWait.until(ExpectedConditions.titleContains("Home"));
 
+	}
+
+	private void doLogOut()
+	{
+		// Log in to our dummy account.
+		driver.get("http://localhost:" + this.port + "/home");
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+
+		clickElement(webDriverWait, "logout-button");
+
+		webDriverWait.until(ExpectedConditions.titleContains("Login"));
+
+	}
+
+	private void clickElement(WebDriverWait webDriverWait, String elementId) {
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id(elementId)));
+		WebElement element = driver.findElement(By.id(elementId));
+		element.click();
+	}
+
+	private void typeText(WebDriverWait webDriverWait, String textFieldId, String text) {
+		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id(textFieldId)));
+		WebElement fileSelectButton = driver.findElement(By.id(textFieldId));
+		fileSelectButton.sendKeys(text);
 	}
 
 	/**
@@ -197,9 +218,78 @@ class CloudStorageApplicationTests {
 			System.out.println("Large File upload failed");
 		}
 		Assertions.assertFalse(driver.getPageSource().contains("HTTP Status 403 – Forbidden"));
-
 	}
 
+	@Test
+	public void testUnathorizedUser() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
 
+		//Visit the sign-up page.
+		driver.get("http://localhost:" + this.port + "/signup");
+		webDriverWait.until(ExpectedConditions.titleContains("Sign Up"));
+		Assertions.assertEquals("http://localhost:" + this.port + "/signup", driver.getCurrentUrl());
 
+		//Visit the login page.
+		driver.get("http://localhost:" + this.port + "/login");
+		webDriverWait.until(ExpectedConditions.titleContains("Login"));
+		Assertions.assertEquals("http://localhost:" + this.port + "/login", driver.getCurrentUrl());
+
+		// Visit home page failed
+		driver.get("http://localhost:" + this.port + "/home");
+		webDriverWait.until(ExpectedConditions.titleContains("Login"));
+		Assertions.assertEquals("http://localhost:" + this.port + "/login", driver.getCurrentUrl());
+	}
+
+	@Test
+	public void SignAndUnsignUser() {
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+
+		// Create a test account
+		doMockSignUp("Large File","Test","LFT","123");
+		doLogIn("LFT", "123");
+
+		// Visit home page
+		driver.get("http://localhost:" + this.port + "/home");
+		webDriverWait.until(ExpectedConditions.titleContains("Home"));
+		Assertions.assertEquals("http://localhost:" + this.port + "/home", driver.getCurrentUrl());
+
+		doLogOut();
+
+		// Visit home page failed
+		driver.get("http://localhost:" + this.port + "/home");
+		webDriverWait.until(ExpectedConditions.titleContains("Login"));
+		Assertions.assertEquals("http://localhost:" + this.port + "/login", driver.getCurrentUrl());
+	}
+
+	@Test
+	public void addNote() {
+		String newNoteTitle = "new note title";
+		String newNoteDescription = "new note description";
+
+		// Create a test account
+		doMockSignUp("Large File","Test","LFT","123");
+		doLogIn("LFT", "123");
+
+		// Choose Note bookmark
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+		clickElement(webDriverWait, "nav-notes-tab");
+
+		// add new note
+		clickElement(webDriverWait, "nav-notes-tab");
+		clickElement(webDriverWait, "add-note-button");
+
+		// type title
+
+		typeText(webDriverWait, "note-title", newNoteTitle);
+
+		// type title
+		typeText(webDriverWait, "note-description", newNoteDescription);
+
+		// confirm adding new note
+		clickElement(webDriverWait, "submit-note-button");
+
+		//
+		Assertions.assertTrue(driver.getPageSource().contains(newNoteTitle));
+		Assertions.assertTrue(driver.getPageSource().contains(newNoteDescription));
+	}
 }
