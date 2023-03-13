@@ -37,7 +37,7 @@ public class CredentialService {
                         dbCred.getUrl(),
                         dbCred.getUsername(),
                         dbCred.getCredentialKey(),
-                        getDecrypted(dbCred.getPassword(), dbCred.getCredentialKey()),
+                        dbCred.getPassword(),
                         dbCred.getUserId())).toArray(UserCredential[]::new);
     }
 
