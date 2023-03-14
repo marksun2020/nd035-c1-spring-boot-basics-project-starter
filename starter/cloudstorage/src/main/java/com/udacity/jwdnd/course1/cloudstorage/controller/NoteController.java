@@ -25,18 +25,22 @@ public class NoteController {
     public String addNote(@ModelAttribute UserNote note, Authentication authentication, RedirectAttributes redirectAttributes) throws IOException {
         if (note.getNoteId() != null) {
             this.noteService.updateNote(note);
+            redirectAttributes.addFlashAttribute("message", String.format("The note is successfully updated"));
         }
         else {
             int userId = this.userService.getUser(authentication.getName()).getUserId();
             note.setUserId(userId);
             this.noteService.addNote(note);
+            redirectAttributes.addFlashAttribute("message", String.format("The note is successfully added"));
         }
         return "redirect:/home";
     }
 
     @GetMapping("/delete/{noteId}")
-    public String deleteNote(@PathVariable Integer noteId) {
+    public String deleteNote(@PathVariable Integer noteId, RedirectAttributes redirectAttributes) {
         this.noteService.deleteNote(noteId);
+        redirectAttributes.addFlashAttribute("message", String.format("The note is successfully removed"));
+
         return "redirect:/home";
     }
 

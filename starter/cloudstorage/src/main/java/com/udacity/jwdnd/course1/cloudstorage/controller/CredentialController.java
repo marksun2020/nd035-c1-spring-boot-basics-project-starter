@@ -26,18 +26,22 @@ public class CredentialController {
             credential.setUserId(dbCredential.getUserId());
             credential.setCredentialKey(dbCredential.getCredentialKey());
             this.credentialService.updateCredential(credential);
+            redirectAttributes.addFlashAttribute("message", String.format("The credential is successfully updated"));
         }
         else {
             int userId = this.userService.getUser(authentication.getName()).getUserId();
             credential.setUserId(userId);
             this.credentialService.addCredential(credential);
+            redirectAttributes.addFlashAttribute("message", String.format("The credential is successfully added"));
         }
         return "redirect:/home";
     }
 
     @GetMapping("/delete/{credentialId}")
-    public String deleteCredential(@PathVariable Integer credentialId) {
+    public String deleteCredential(@PathVariable Integer credentialId, RedirectAttributes redirectAttributes) {
         this.credentialService.deleteCredential(credentialId);
+        redirectAttributes.addFlashAttribute("message", String.format("The credential is successfully removed"));
+
         return "redirect:/home";
     }
 

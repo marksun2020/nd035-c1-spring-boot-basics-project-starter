@@ -8,11 +8,15 @@ import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.io.File;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.ANY)
 class CloudStorageApplicationTests {
 
 	@LocalServerPort
@@ -85,6 +89,7 @@ class CloudStorageApplicationTests {
 		// You may have to modify the element "success-msg" and the sign-up 
 		// success message below depening on the rest of your code.
 		*/
+		webDriverWait.until(ExpectedConditions.elementToBeClickable(By.id("success-msg")));
 		Assertions.assertTrue(driver.findElement(By.id("success-msg")).getText().contains("You successfully signed up!"));
 	}
 
@@ -129,8 +134,12 @@ class CloudStorageApplicationTests {
 	}
 
 	private void clickElement(WebDriverWait webDriverWait, String elementId) {
+		clickElement(webDriverWait, elementId, 0);
+	}
+
+	private void clickElement(WebDriverWait webDriverWait, String elementId, int index) {
 		webDriverWait.until(ExpectedConditions.visibilityOfElementLocated(By.id(elementId)));
-		WebElement element = driver.findElement(By.id(elementId));
+		WebElement element = driver.findElements(By.id(elementId)).get(index);
 		element.click();
 	}
 
@@ -276,21 +285,8 @@ class CloudStorageApplicationTests {
 		doMockSignUp("Large File","Test","LFT","123");
 		doLogIn("LFT", "123");
 
-		// Choose Note bookmark
 		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
-		clickElement(webDriverWait, "nav-notes-tab");
-
-		// add new note
-		clickElement(webDriverWait, "add-note-button");
-
-		// type title
-		typeText(webDriverWait, "note-title", newNoteTitle);
-
-		// type description
-		typeText(webDriverWait, "note-description", newNoteDescription);
-
-		// confirm adding new note
-		clickElement(webDriverWait, "submit-note-button");
+		createNote(newNoteTitle, newNoteDescription, webDriverWait);
 
 		// assertion
 		Assertions.assertTrue(driver.getPageSource().contains(newNoteTitle));
@@ -299,25 +295,26 @@ class CloudStorageApplicationTests {
 
 	@Test
 	public void editNote() {
-		String newNoteTitle = "new note title-1";
-		String newNoteDescription = "new note description-1";
-		String editedNoteTitle = "new note title-2";
-		String editedNoteDescription = "new note description-2";
+		String newNoteTitle1 = "new note title-1";
+		String newNoteDescription1 = "new note description-1";
+		String newNoteTitle2 = "new note title-2";
+		String newNoteDescription2 = "new note description-2";
+		String editedNoteTitle = "edited note title-1";
+		String editedNoteDescription = "edited note description-1";
 
 		// For keeping the test independent, a new user should be created and a new note will be stored
 		//
 		doMockSignUp("Large File","Test","LFT","123");
 		doLogIn("LFT", "123");
 		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
-		clickElement(webDriverWait, "nav-notes-tab");
-		clickElement(webDriverWait, "add-note-button");
-		typeText(webDriverWait, "note-title", newNoteTitle);
-		typeText(webDriverWait, "note-description", newNoteDescription);
-		clickElement(webDriverWait, "submit-note-button");
+		// add one note
+		createNote(newNoteTitle1, newNoteDescription1, webDriverWait);
+		// add one more note
+		createNote(newNoteTitle2, newNoteDescription2, webDriverWait);
 
-		// edit the new note. We have only one note, therefore no need to search the right 'edit'-button
+		// edit the second note.
 		clickElement(webDriverWait, "nav-notes-tab");
-		clickElement(webDriverWait, "edit-note-button");
+		clickElement(webDriverWait, "edit-note-button", 1);
 		clearText(webDriverWait, "note-title");
 		typeText(webDriverWait, "note-title", editedNoteTitle);
 		clearText(webDriverWait, "note-description");
@@ -326,34 +323,42 @@ class CloudStorageApplicationTests {
 
 		clickElement(webDriverWait, "nav-notes-tab");
 		// assertion
+		Assertions.assertTrue(driver.getPageSource().contains(newNoteTitle1));
+		Assertions.assertTrue(driver.getPageSource().contains(newNoteDescription1));
+		Assertions.assertFalse(driver.getPageSource().contains(newNoteTitle2));
+		Assertions.assertFalse(driver.getPageSource().contains(newNoteDescription2));
 		Assertions.assertTrue(driver.getPageSource().contains(editedNoteTitle));
 		Assertions.assertTrue(driver.getPageSource().contains(editedNoteDescription));
 	}
 
 	@Test
 	public void deleteNote() {
-		String newNoteTitle = "new note title to delete";
-		String newNoteDescription = "new note description to delete";
+		String newNoteTitle1 = "new note title-1";
+		String newNoteDescription1 = "new note description-1";
+		String newNoteTitle2 = "title to delete";
+		String newNoteDescription2 = "description to delete";
+
 
 		// For keeping the test independent, a new user should be created and a new note will be stored
 		//
 		doMockSignUp("Large File","Test","LFT","123");
 		doLogIn("LFT", "123");
 		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
-		clickElement(webDriverWait, "nav-notes-tab");
-		clickElement(webDriverWait, "add-note-button");
-		typeText(webDriverWait, "note-title", newNoteTitle);
-		typeText(webDriverWait, "note-description", newNoteDescription);
-		clickElement(webDriverWait, "submit-note-button");
+		// add one note
+		createNote(newNoteTitle1, newNoteDescription1, webDriverWait);
+		// add one more note
+		createNote(newNoteTitle2, newNoteDescription2, webDriverWait);
 
-		// delete the new note. We have only one note, therefore no need to search the right 'delete'-button
+		// delete the second note
 		clickElement(webDriverWait, "nav-notes-tab");
-		clickElement(webDriverWait, "delete-note-button");
+		clickElement(webDriverWait, "delete-note-button", 1);
 
 		clickElement(webDriverWait, "nav-notes-tab");
 		// assertion
-		Assertions.assertFalse(driver.getPageSource().contains(newNoteTitle));
-		Assertions.assertFalse(driver.getPageSource().contains(newNoteDescription));
+		Assertions.assertTrue(driver.getPageSource().contains(newNoteTitle1));
+		Assertions.assertTrue(driver.getPageSource().contains(newNoteDescription1));
+		Assertions.assertFalse(driver.getPageSource().contains(newNoteTitle2));
+		Assertions.assertFalse(driver.getPageSource().contains(newNoteDescription2));
 	}
 
 	@Test
@@ -368,28 +373,114 @@ class CloudStorageApplicationTests {
 
 		// Choose Credential bookmark
 		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
-		clickElement(webDriverWait, "nav-credentials-tab");
-
-		// add new note
-		clickElement(webDriverWait, "add-credential-button");
-
-		// type url
-		typeText(webDriverWait, "credential-url", newUrl);
-
-		// type username
-		typeText(webDriverWait, "credential-username", newUsername);
-
-		// type password
-		typeText(webDriverWait, "credential-password", newPassword);
-
-		// confirm adding new credential
-		clickElement(webDriverWait, "submit-credential-button");
+		// add one credential
+		createCredential(newUrl, newUsername, newPassword, webDriverWait);
 
 		// assertion
 		clickElement(webDriverWait, "nav-credentials-tab");
 		Assertions.assertTrue(driver.getPageSource().contains(newUrl));
 		Assertions.assertTrue(driver.getPageSource().contains(newUsername));
 		Assertions.assertFalse(driver.getPageSource().contains(newPassword));
+	}
+
+	@Test
+	public void editCredential() {
+		String newUrl1 = "new url-1";
+		String newUsername1 = "new user-1";
+		String newPassword1 = "new pass-1";
+		String newUrl2 = "new url-2";
+		String newUsername2 = "new user-2";
+		String newPassword2 = "new pass-2";
+		String editedUrl1 = "edited url-1";
+		String editedUsername1 = "edited user-1";
+
+		// For keeping the test independent, a new user should be created and a new note will be stored
+		//
+		doMockSignUp("Large File","Test","LFT","123");
+		doLogIn("LFT", "123");
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+		// add one credential
+		createCredential(newUrl1, newUsername1, newPassword1, webDriverWait);
+		// add one more credential
+		createCredential(newUrl2, newUsername2, newPassword2, webDriverWait);
+
+		// edit the second credential.
+		clickElement(webDriverWait, "nav-credentials-tab");
+		clickElement(webDriverWait, "edit-credential-button", 1);
+		clearText(webDriverWait, "credential-url");
+		typeText(webDriverWait, "credential-url", editedUrl1);
+		clearText(webDriverWait, "credential-username");
+		typeText(webDriverWait, "credential-username", editedUsername1);
+		clickElement(webDriverWait, "submit-credential-button");
+
+		clickElement(webDriverWait, "nav-credentials-tab");
+		// assertion
+		Assertions.assertTrue(driver.getPageSource().contains(newUrl1));
+		Assertions.assertTrue(driver.getPageSource().contains(newUsername1));
+		Assertions.assertFalse(driver.getPageSource().contains(newUrl2));
+		Assertions.assertFalse(driver.getPageSource().contains(newUsername2));
+		Assertions.assertTrue(driver.getPageSource().contains(editedUrl1));
+		Assertions.assertTrue(driver.getPageSource().contains(editedUsername1));
+	}
+
+	@Test
+	public void deleteCredential() {
+		String newUrl1 = "new url-1";
+		String newUsername1 = "new user-1";
+		String newPassword1 = "new pass-1";
+		String newUrl2 = "url to delete";
+		String newUsername2 = "username to delete";
+		String newPassword2 = "pass to delete";
+
+		// For keeping the test independent, a new user should be created and a new note will be stored
+		//
+		doMockSignUp("Large File","Test","LFT","123");
+		doLogIn("LFT", "123");
+		WebDriverWait webDriverWait = new WebDriverWait(driver, 2);
+		// add one credential
+		createCredential(newUrl1, newUsername1, newPassword1, webDriverWait);
+		// add one more credential
+		createCredential(newUrl2, newUsername2, newPassword2, webDriverWait);
+
+		// delete the second credential
+		clickElement(webDriverWait, "nav-credentials-tab");
+		clickElement(webDriverWait, "delete-credential-button", 1);
+
+		clickElement(webDriverWait, "nav-credentials-tab");
+
+		// assertion
+		Assertions.assertTrue(driver.getPageSource().contains(newUrl1));
+		Assertions.assertTrue(driver.getPageSource().contains(newUsername1));
+		Assertions.assertFalse(driver.getPageSource().contains(newUrl2));
+		Assertions.assertFalse(driver.getPageSource().contains(newUsername2));
+	}
+
+
+	private void createNote(String noteTitle, String noteDescription, WebDriverWait webDriverWait) {
+		clickElement(webDriverWait, "nav-notes-tab");
+		clickElement(webDriverWait, "add-note-button");
+		typeText(webDriverWait, "note-title", noteTitle);
+		typeText(webDriverWait, "note-description", noteDescription);
+		clickElement(webDriverWait, "submit-note-button");
+	}
+
+	private void createCredential(String url, String username, String password, WebDriverWait webDriverWait) {
+		clickElement(webDriverWait, "nav-credentials-tab");
+
+		// add new credential
+		clickElement(webDriverWait, "add-credential-button");
+
+		// type url
+		typeText(webDriverWait, "credential-url", url);
+
+		// type username
+		typeText(webDriverWait, "credential-username", username);
+
+		// type password
+		typeText(webDriverWait, "credential-password", password);
+
+		// confirm adding new credential
+		clickElement(webDriverWait, "submit-credential-button");
 	}
 
 }

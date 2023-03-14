@@ -59,9 +59,10 @@ public class FileController {
     }
 
     @GetMapping("/delete/{fileName:.+}")
-    public String removeFile(@PathVariable String fileName) {
+    public String removeFile(@PathVariable String fileName, RedirectAttributes redirectAttributes) {
         UserFile file = this.fileService.getFile(fileName);
         this.fileService.deleteFile(file.getFileName());
+        redirectAttributes.addFlashAttribute("message", String.format("Successfully removed file '%s'", fileName));
 
         return "redirect:/home";
     }

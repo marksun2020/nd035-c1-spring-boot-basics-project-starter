@@ -139,8 +139,8 @@
                                 <tbody>
                                 <tr th:each="cred:${uploadedCredentials}">
                                     <td>
-                                        <button type="button" class="btn btn-success" th:onclick="showCredentialModal([[${cred.getCredentialId()}]], [[${cred.getUrl()}]], [[${cred.getUsername()}]], [[${cred.getPassword()}]])">Edit</button>
-                                        <a class="btn btn-danger"  th:href="@{'credential/delete/' + ${cred.getCredentialId()}}">Delete</a>
+                                        <button type="button" class="btn btn-success" id="edit-credential-button" th:onclick="showCredentialModal([[${cred.getCredentialId()}]], [[${cred.getUrl()}]], [[${cred.getUsername()}]], [[${cred.getPassword()}]])">Edit</button>
+                                        <a class="btn btn-danger" id="delete-credential-button"  th:href="@{'credential/delete/' + ${cred.getCredentialId()}}">Delete</a>
                                     </td>
                                     <th scope="row" th:text="${cred.getUrl()}">Credential URL</th>
                                     <td th:text="${cred.getUsername()}">Credential Username</td>
